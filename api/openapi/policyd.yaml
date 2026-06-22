@@ -1,0 +1,133 @@
+openapi: 3.1.0
+info:
+  title: AgentOS Policy API
+  version: 0.1.0
+servers:
+  - url: http://localhost:8082
+paths:
+  /v1/policy/evaluate:
+    post:
+      operationId: evaluatePolicy
+      security:
+        - bearerAuth: [policy.evaluate]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvaluateRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvaluateResponse'
+  /v1/policy/compile:
+    post:
+      operationId: compilePolicy
+      security:
+        - bearerAuth: [policy.compile]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompileRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompileResponse'
+  /v1/policy/modules/{name}:
+    put:
+      operationId: putPolicyModule
+      security:
+        - bearerAuth: [policy.admin]
+      parameters:
+        - in: path
+          name: name
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+      responses:
+        '204':
+          description: No Content
+  /v1/policy/decisions/{id}:
+    get:
+      operationId: getDecision
+      security:
+        - bearerAuth: [policy.read]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvaluateResponse'
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: '../openapi/common.yaml#/components/securitySchemes/bearerAuth'
+  schemas:
+    EvaluateRequest:
+      type: object
+      required: [package, query, input]
+      properties:
+        package:
+          type: string
+        query:
+          type: string
+        input:
+          type: object
+          additionalProperties: true
+    EvaluateResponse:
+      type: object
+      properties:
+        decisionId:
+          type: string
+        result:
+          type: object
+          properties:
+            effect:
+              type: string
+            obligations:
+              type: array
+              items:
+                type: object
+            filters:
+              type: array
+              items:
+                type: object
+    CompileRequest:
+      type: object
+      required: [package, query, input]
+      properties:
+        package:
+          type: string
+        query:
+          type: string
+        input:
+          type: object
+          additionalProperties: true
+    CompileResponse:
+      type: object
+      properties:
+        filters:
+          type: array
+          items:
+            type: object

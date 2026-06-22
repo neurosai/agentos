@@ -1,0 +1,75 @@
+{
+  "$id": "https://agentos.dev/schemas/agent-manifest.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AgentManifest",
+  "x-deferred": "agentd",
+  "type": "object",
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": {
+      "type": "string",
+      "const": "agentos.io/v1alpha1"
+    },
+    "kind": {
+      "type": "string",
+      "const": "Agent"
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "namespace": { "type": "string" },
+        "labels": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      },
+      "additionalProperties": true
+    },
+    "spec": {
+      "type": "object",
+      "required": ["runtime", "identity", "permissions"],
+      "properties": {
+        "runtime": {
+          "type": "object",
+          "required": ["mode"],
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": ["external-http", "exec", "container"]
+            },
+            "image": { "type": "string" },
+            "command": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "args": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "additionalProperties": true
+        },
+        "identity": {
+          "type": "object",
+          "required": ["principal"],
+          "properties": {
+            "principal": { "type": "string" },
+            "audience": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "additionalProperties": true
+        },
+        "permissions": { "type": "object", "additionalProperties": true },
+        "workspace": { "type": "object", "additionalProperties": true },
+        "budgets": { "type": "object", "additionalProperties": true },
+        "a2a": { "type": "object", "additionalProperties": true }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}

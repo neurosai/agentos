@@ -1,0 +1,95 @@
+openapi: 3.1.0
+info:
+  title: AgentOS Discovery API
+  version: 0.1.0
+servers:
+  - url: http://localhost:8087
+paths:
+  /v1/discovery/jobs:
+    post:
+      operationId: createDiscoveryJob
+      security:
+        - bearerAuth: [discovery.request]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiscoveryJobRequest'
+      responses:
+        '201':
+          description: Created
+  /v1/discovery/jobs/{id}:
+    get:
+      operationId: getDiscoveryJob
+      security:
+        - bearerAuth: [discovery.read]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  /v1/discovery/jobs/{id}:approve:
+    post:
+      operationId: approveDiscoveryJob
+      security:
+        - bearerAuth: [discovery.approve]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  /v1/discovery/collectors:
+    get:
+      operationId: listCollectors
+      security:
+        - bearerAuth: [discovery.read]
+      responses:
+        '200':
+          description: OK
+  /v1/discovery/jobs/{id}/observations:
+    get:
+      operationId: listObservations
+      security:
+        - bearerAuth: [discovery.read]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: '../openapi/common.yaml#/components/securitySchemes/bearerAuth'
+  schemas:
+    DiscoveryJobRequest:
+      type: object
+      required: [collector, scope, mode]
+      properties:
+        collector:
+          type: string
+          enum: [git, kubernetes, api_descriptor, cicd, otel_metadata]
+        scope:
+          type: object
+          additionalProperties: true
+        mode:
+          type: string
+          enum: [read_only]
+        writeToCatalog:
+          type: boolean
+        writeToMemory:
+          type: boolean
+        requestedBy:
+          type: string

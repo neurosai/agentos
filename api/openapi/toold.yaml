@@ -1,0 +1,145 @@
+openapi: 3.1.0
+info:
+  title: AgentOS Tool API
+  version: 0.1.0
+servers:
+  - url: http://localhost:8084
+paths:
+  /v1/tools:
+    get:
+      operationId: listTools
+      security:
+        - bearerAuth: [tool.read]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tool'
+  /v1/tools/{toolId}:
+    get:
+      operationId: getTool
+      security:
+        - bearerAuth: [tool.read]
+      parameters:
+        - in: path
+          name: toolId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tool'
+  /v1/tools/{toolId}:invoke:
+    post:
+      operationId: invokeTool
+      security:
+        - bearerAuth: [tool.invoke]
+      parameters:
+        - in: path
+          name: toolId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvokeRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvokeResponse'
+        '422':
+          description: Policy denied
+  /v1/tools/{toolId}:dryRun:
+    post:
+      operationId: dryRunTool
+      security:
+        - bearerAuth: [tool.invoke]
+      parameters:
+        - in: path
+          name: toolId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvokeRequest'
+      responses:
+        '200':
+          description: OK
+  /v1/tools/{toolId}/schema:
+    get:
+      operationId: getToolSchema
+      security:
+        - bearerAuth: [tool.read]
+      parameters:
+        - in: path
+          name: toolId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: '../openapi/common.yaml#/components/securitySchemes/bearerAuth'
+  schemas:
+    Tool:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        transport:
+          type: string
+        risk:
+          type: string
+    InvokeRequest:
+      type: object
+      required: [taskId, agentId, arguments]
+      properties:
+        taskId:
+          type: string
+        agentId:
+          type: string
+        arguments:
+          type: object
+          additionalProperties: true
+        credentialMode:
+          type: string
+          enum: [none, exchange, vault_ref]
+        context:
+          type: object
+          additionalProperties: true
+    InvokeResponse:
+      type: object
+      properties:
+        callId:
+          type: string
+        status:
+          type: string
+        output:
+          type: object
+        outputTrust:
+          type: string
+        auditEventId:
+          type: string

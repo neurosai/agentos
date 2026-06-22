@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package agentos.v1;
+
+option go_package = "github.com/neurosai/agentos/pkg/api/proto/agentos/v1;agentosv1";
+
+message Observation {
+  string id = 1;
+  string collector = 2;
+  string kind = 3;
+  string observed_at = 4;
+  string resource_ref = 5;
+  bytes claim_json = 6;
+  double confidence = 7;
+}
+
+message UpsertObservationsResponse {
+  int32 accepted = 1;
+  int32 rejected = 2;
+}
+
+service CatalogIngestService {
+  rpc UpsertObservations(stream Observation) returns (UpsertObservationsResponse);
+}

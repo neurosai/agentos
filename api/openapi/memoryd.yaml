@@ -1,0 +1,161 @@
+openapi: 3.1.0
+info:
+  title: AgentOS Memory API
+  version: 0.1.0
+servers:
+  - url: http://localhost:8085
+paths:
+  /v1/memory/records:
+    post:
+      operationId: createMemoryRecord
+      security:
+        - bearerAuth: [memory.write]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MemoryRecordInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoryRecord'
+  /v1/memory/records/{id}:
+    get:
+      operationId: getMemoryRecord
+      security:
+        - bearerAuth: [memory.read]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoryRecord'
+  /v1/memory/query:
+    post:
+      operationId: queryMemory
+      security:
+        - bearerAuth: [memory.read]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MemoryQuery'
+      responses:
+        '200':
+          description: OK
+  /v1/memory/records/{id}:forget:
+    post:
+      operationId: forgetMemoryRecord
+      security:
+        - bearerAuth: [memory.delete]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  /v1/memory/records/{id}:promote:
+    post:
+      operationId: promoteMemoryRecord
+      security:
+        - bearerAuth: [memory.write]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  /v1/memory/records/{id}:revise:
+    post:
+      operationId: reviseMemoryRecord
+      security:
+        - bearerAuth: [memory.write]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MemoryRecordInput'
+      responses:
+        '200':
+          description: OK
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: '../openapi/common.yaml#/components/securitySchemes/bearerAuth'
+  schemas:
+    MemoryRecordInput:
+      type: object
+      required: [namespace, type, content, sourceRef]
+      properties:
+        namespace:
+          type: string
+        type:
+          $ref: '../openapi/common.yaml#/components/schemas/MemoryType'
+        subjectRef:
+          type: string
+        content:
+          type: string
+        contentJson:
+          type: object
+          additionalProperties: true
+        classification:
+          type: string
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        sourceRef:
+          type: string
+        provenance:
+          type: object
+        acl:
+          type: object
+        retentionUntil:
+          type: string
+          format: date-time
+    MemoryRecord:
+      allOf:
+        - $ref: '#/components/schemas/MemoryRecordInput'
+        - type: object
+          required: [id]
+          properties:
+            id:
+              type: string
+    MemoryQuery:
+      type: object
+      properties:
+        namespace:
+          type: string
+        query:
+          type: string
+        types:
+          type: array
+          items:
+            $ref: '../openapi/common.yaml#/components/schemas/MemoryType'
+        limit:
+          type: integer

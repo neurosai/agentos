@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package agentos.v1;
+
+option go_package = "github.com/neurosai/agentos/pkg/api/proto/agentos/v1;agentosv1";
+
+message TaskRef {
+  string id = 1;
+  string tenant_id = 2;
+}
+
+message TaskEvent {
+  string event_id = 1;
+  string task_id = 2;
+  string type = 3;
+  string occurred_at = 4;
+  bytes payload_json = 5;
+  string trace_id = 6;
+}
+
+message StreamTaskEventsRequest {
+  string task_id = 1;
+  bool from_beginning = 2;
+}
+
+service TaskEventsService {
+  rpc StreamTaskEvents(StreamTaskEventsRequest) returns (stream TaskEvent);
+}

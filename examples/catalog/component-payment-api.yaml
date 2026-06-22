@@ -1,0 +1,18 @@
+apiVersion: agentos.io/v1
+kind: Component
+metadata:
+  name: payment-api
+  namespace: payments
+  title: Payment API
+  labels:
+    tier: backend
+spec:
+  type: service
+  owner: group:team-payments
+  system: system:payments-platform
+  lifecycle: production
+  providesApis:
+    - api:payments-public
+  dependsOn:
+    - resource:postgres-payments
+    - component:invoice-api

@@ -1,0 +1,24 @@
+{
+  "namespace": "workspace:payments",
+  "type": "catalog_fact",
+  "subjectRef": "component:payments/payment-api",
+  "content": "payment-api depends on invoice-api",
+  "contentJson": {
+    "predicate": "dependsOn",
+    "objectRef": "component:billing/invoice-api"
+  },
+  "classification": "internal",
+  "confidence": 0.87,
+  "sourceRef": "obs:otel:3f5e",
+  "provenance": {
+    "sources": [
+      "obs:k8s:01J",
+      "obs:otel:01J"
+    ]
+  },
+  "acl": {
+    "view": ["group:team-platform", "group:team-payments"],
+    "manage": ["group:team-platform"]
+  },
+  "retentionUntil": "2026-09-20T00:00:00Z"
+}

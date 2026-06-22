@@ -1,0 +1,48 @@
+{
+  "apiVersion": "agentos.io/v1alpha1",
+  "kind": "Agent",
+  "metadata": {
+    "name": "hermes-dev",
+    "namespace": "default",
+    "labels": {
+      "profile": "repo-analysis"
+    }
+  },
+  "spec": {
+    "runtime": {
+      "mode": "container",
+      "image": "ghcr.io/acme/hermes:0.1.0",
+      "command": ["hermes"],
+      "args": ["serve"]
+    },
+    "identity": {
+      "principal": "agent:hermes-dev",
+      "audience": ["agentos"]
+    },
+    "permissions": {
+      "task": { "submit": false, "read": true, "write": true },
+      "memory": {
+        "readNamespaces": ["workspace:payments", "catalog:*"],
+        "writeNamespaces": ["task:*"]
+      },
+      "tools": {
+        "allow": [
+          "mcp:gitlab.read_file",
+          "mcp:gitlab.list_tree",
+          "builtin:workspace.write_artifact"
+        ]
+      }
+    },
+    "workspace": {
+      "isolation": "ephemeral",
+      "mountArtifacts": true,
+      "maxSizeMiB": 512
+    },
+    "budgets": {
+      "maxTaskDuration": "30m",
+      "maxToolCalls": 50,
+      "maxOutputBytes": 1048576
+    },
+    "a2a": { "expose": false }
+  }
+}

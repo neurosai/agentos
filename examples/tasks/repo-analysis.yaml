@@ -1,0 +1,7 @@
+agentRef: agent:hermes-dev
+contextId: ctx_repo_platform
+input:
+  goal: Analyze the payments repository and propose a new API extension point
+labels:
+  project: payments
+  classification: internal

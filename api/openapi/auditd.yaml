@@ -1,0 +1,135 @@
+openapi: 3.1.0
+info:
+  title: AgentOS Audit API
+  version: 0.1.0
+servers:
+  - url: http://localhost:8083
+paths:
+  /v1/audit/events:
+    post:
+      operationId: appendAuditEvent
+      security:
+        - bearerAuth: [audit.write]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuditEvent'
+      responses:
+        '201':
+          description: Created
+    get:
+      operationId: queryAuditEvents
+      security:
+        - bearerAuth: [audit.read]
+      parameters:
+        - $ref: '../openapi/common.yaml#/components/parameters/Limit'
+        - $ref: '../openapi/common.yaml#/components/parameters/Cursor'
+        - name: tenantId
+          in: query
+          schema:
+            type: string
+        - name: taskId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AuditEvent'
+  /v1/audit/events/{id}:
+    get:
+      operationId: getAuditEvent
+      security:
+        - bearerAuth: [audit.read]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditEvent'
+  /v1/audit/proofs/{stream}:
+    get:
+      operationId: getAuditProof
+      security:
+        - bearerAuth: [audit.read]
+      parameters:
+        - in: path
+          name: stream
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  /v1/audit/anchors:
+    post:
+      operationId: anchorAuditStream
+      security:
+        - bearerAuth: [audit.admin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [streamId]
+              properties:
+                streamId:
+                  type: string
+      responses:
+        '201':
+          description: Created
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: '../openapi/common.yaml#/components/securitySchemes/bearerAuth'
+  schemas:
+    AuditEvent:
+      type: object
+      required: [eventId, occurredAt, eventHash, payloadHash]
+      properties:
+        eventId:
+          type: string
+        occurredAt:
+          type: string
+          format: date-time
+        tenantId:
+          type: string
+        subjectId:
+          type: string
+        agentId:
+          type: string
+        taskId:
+          type: string
+        eventType:
+          type: string
+        resourceType:
+          type: string
+        resourceId:
+          type: string
+        action:
+          type: string
+        decision:
+          type: string
+        traceId:
+          type: string
+        payloadHash:
+          type: string
+        prevHash:
+          type: string
+        eventHash:
+          type: string

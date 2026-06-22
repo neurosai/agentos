@@ -1,0 +1,105 @@
+openapi: 3.1.0
+info:
+  title: AgentOS Catalog API
+  version: 0.1.0
+servers:
+  - url: http://localhost:8086
+paths:
+  /v1/catalog/entities:
+    post:
+      operationId: upsertCatalogEntity
+      security:
+        - bearerAuth: [catalog.write]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CatalogEntity'
+      responses:
+        '200':
+          description: OK
+  /v1/catalog/entities/{ref}:
+    get:
+      operationId: getCatalogEntity
+      security:
+        - bearerAuth: [catalog.read]
+      parameters:
+        - in: path
+          name: ref
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  /v1/catalog/graph:
+    get:
+      operationId: getCatalogGraph
+      security:
+        - bearerAuth: [catalog.read]
+      parameters:
+        - name: root
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: depth
+          in: query
+          schema:
+            type: integer
+            default: 2
+      responses:
+        '200':
+          description: OK
+  /v1/catalog/merge-observations:
+    post:
+      operationId: mergeObservations
+      security:
+        - bearerAuth: [catalog.write]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                additionalProperties: true
+      responses:
+        '200':
+          description: OK
+  /v1/catalog/search:
+    get:
+      operationId: searchCatalog
+      security:
+        - bearerAuth: [catalog.read]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+        - $ref: '../openapi/common.yaml#/components/parameters/Limit'
+      responses:
+        '200':
+          description: OK
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: '../openapi/common.yaml#/components/securitySchemes/bearerAuth'
+  schemas:
+    CatalogEntity:
+      type: object
+      required: [apiVersion, kind, metadata]
+      properties:
+        apiVersion:
+          type: string
+        kind:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+        spec:
+          type: object
+          additionalProperties: true

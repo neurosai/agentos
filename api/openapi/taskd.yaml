@@ -1,0 +1,224 @@
+openapi: 3.1.0
+info:
+  title: AgentOS Task API
+  version: 0.1.0
+servers:
+  - url: http://localhost:8081
+paths:
+  /v1/tasks:
+    post:
+      operationId: createTask
+      security:
+        - bearerAuth: [task.submit]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '422':
+          description: Policy denied
+          content:
+            application/json:
+              schema:
+                $ref: '../openapi/common.yaml#/components/schemas/Error'
+  /v1/tasks/{taskId}:
+    get:
+      operationId: getTask
+      security:
+        - bearerAuth: [task.read]
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '../openapi/common.yaml#/components/schemas/Error'
+  /v1/tasks/{taskId}/events:
+    get:
+      operationId: streamTaskEvents
+      security:
+        - bearerAuth: [task.read]
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: SSE stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+  /v1/tasks/{taskId}:cancel:
+    post:
+      operationId: cancelTask
+      security:
+        - bearerAuth: [task.cancel]
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+  /v1/tasks/{taskId}/messages:
+    post:
+      operationId: addTaskMessage
+      security:
+        - bearerAuth: [task.write]
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskMessage'
+      responses:
+        '201':
+          description: Created
+  /v1/tasks/{taskId}/approvals:
+    post:
+      operationId: decideApproval
+      security:
+        - bearerAuth: [task.approve]
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApprovalDecision'
+      responses:
+        '200':
+          description: OK
+  /v1/tasks/{taskId}/artifacts:
+    get:
+      operationId: listArtifacts
+      security:
+        - bearerAuth: [task.read]
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Artifact'
+components:
+  securitySchemes:
+    bearerAuth:
+      $ref: '../openapi/common.yaml#/components/securitySchemes/bearerAuth'
+  schemas:
+    CreateTaskRequest:
+      type: object
+      required: [agentRef, input]
+      properties:
+        agentRef:
+          type: string
+        contextId:
+          type: string
+        input:
+          type: object
+          additionalProperties: true
+        labels:
+          type: object
+          additionalProperties:
+            type: string
+    Task:
+      type: object
+      required: [id, status, createdAt]
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        contextId:
+          type: string
+        agentRef:
+          type: string
+        status:
+          $ref: '../openapi/common.yaml#/components/schemas/TaskStatus'
+        input:
+          type: object
+          additionalProperties: true
+        labels:
+          type: object
+          additionalProperties:
+            type: string
+        createdBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    TaskMessage:
+      type: object
+      required: [role, content]
+      properties:
+        role:
+          type: string
+        content:
+          type: string
+    ApprovalDecision:
+      type: object
+      required: [approved]
+      properties:
+        approved:
+          type: boolean
+        reason:
+          type: string
+    Artifact:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        contentType:
+          type: string
+        uri:
+          type: string

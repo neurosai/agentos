@@ -1,0 +1,40 @@
+{
+  "$id": "https://agentos.dev/schemas/catalog-entity.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CatalogEntity",
+  "type": "object",
+  "required": ["apiVersion", "kind", "metadata"],
+  "properties": {
+    "apiVersion": {
+      "type": "string",
+      "const": "agentos.io/v1"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "Organization", "Team", "System", "Component", "API", "Resource",
+        "Repository", "Environment", "Cluster", "Namespace", "Dataset",
+        "Tool", "MCPServer", "Agent"
+      ]
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "namespace": { "type": "string" },
+        "title": { "type": "string" },
+        "labels": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      },
+      "additionalProperties": true
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}
