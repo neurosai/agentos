@@ -130,6 +130,8 @@ components:
         context:
           type: object
           additionalProperties: true
+        idempotencyKey:
+          type: string
     InvokeResponse:
       type: object
       properties:

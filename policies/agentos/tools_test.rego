@@ -25,3 +25,10 @@ test_deny_untrusted_high_risk if {
 		"resource": {"risk": "high"},
 	}
 }
+
+test_allow_low_risk_invoke if {
+	tools.allow with input as {
+		"action": "invoke",
+		"resource": {"type": "tool", "id": "tool.echo", "risk": "low"},
+	}
+}

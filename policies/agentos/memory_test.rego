@@ -22,3 +22,9 @@ test_allow_catalog_namespace if {
 		"subject": {"group_ids": []},
 	}
 }
+
+test_allow_write if {
+	memory.allow with input as {
+		"action": "write",
+	}
+}

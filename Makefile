@@ -1,4 +1,4 @@
-.PHONY: all build test lint verify generate proto lint-proto policy migrate-up migrate-down contracts clean
+.PHONY: all build build-legacy test lint verify generate proto lint-proto policy migrate-up migrate-down contracts clean
 
 GO ?= go
 BUF ?= buf
@@ -7,12 +7,20 @@ OPA ?= opa
 GOLANGCI_LINT ?= golangci-lint
 
 MODULE := github.com/neurosai/agentos
-BINARIES := agentctl taskd policyd auditd toold memoryd catalogd discoveryd
+BINARIES := agentctl agentosd
+LEGACY_BINARIES := taskd policyd auditd toold memoryd catalogd discoveryd
 
 all: build
 
-build:
+build: build-primary build-legacy
+
+build-primary:
 	@for bin in $(BINARIES); do \
+		$(GO) build -o bin/$$bin ./cmd/$$bin; \
+	done
+
+build-legacy:
+	@for bin in $(LEGACY_BINARIES); do \
 		$(GO) build -o bin/$$bin ./cmd/$$bin; \
 	done
 

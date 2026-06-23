@@ -1,0 +1,21 @@
+tools:
+  - id: tool.echo
+    name: echo
+    transport: builtin
+    risk: low
+    description: Echo arguments back as output
+  - id: tool.mock_repo_read
+    name: mock_repo_read
+    transport: builtin
+    risk: low
+    description: Mock repository file read
+  - id: tool.mock_jira_preview
+    name: mock_jira_preview
+    transport: builtin
+    risk: medium
+    description: Preview a Jira issue without creating it
+  - id: tool.mock_jira_create
+    name: mock_jira_create
+    transport: builtin
+    risk: high
+    description: Create a Jira issue (requires approval)

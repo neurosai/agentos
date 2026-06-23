@@ -1,69 +1,64 @@
 # AgentOS Architecture
 
-AgentOS v0.1 is a policy-first agent runtime control plane built with Clean Architecture.
+AgentOS is a policy-first agent runtime control plane built with Clean Architecture.
 
-## Control plane
+## Control plane (v0.2)
 
 ```mermaid
 flowchart TB
     CLI[agentctl / API clients]
-    subgraph control [Control Plane - future daemons]
-        TaskD[taskd]
-        PolicyD[policyd]
-        AuditD[auditd]
-        ToolD[toold]
-        MemoryD[memoryd]
-        DiscoveryD[discoveryd]
-        CatalogD[catalogd]
+    subgraph agentosd [agentosd serve]
+        TaskM[task module]
+        PolicyM[policy module]
+        AuditM[audit module]
+        ToolM[tool module]
+        MemoryM[memory module]
     end
     subgraph external [External]
         OPA[OPA]
         PG[(PostgreSQL + pgvector)]
-        MCP[MCP servers]
     end
-    CLI --> TaskD
-    TaskD --> PolicyD
-    ToolD --> PolicyD
-    MemoryD --> PolicyD
-    TaskD --> AuditD
-    ToolD --> AuditD
-    PolicyD --> OPA
-    TaskD --> PG
-    MemoryD --> PG
-    ToolD --> MCP
+    CLI --> agentosd
+    TaskM --> PolicyM
+    ToolM --> PolicyM
+    MemoryM --> PolicyM
+    TaskM --> AuditM
+    ToolM --> AuditM
+    MemoryM --> AuditM
+    PolicyM --> OPA
+    TaskM --> PG
+    AuditM --> PG
+    ToolM --> PG
+    MemoryM --> PG
 ```
 
 ## Clean Architecture layers
 
-| Layer | Location | Foundation status |
-|-------|----------|-------------------|
+| Layer | Location | v0.2 status |
+|-------|----------|-------------|
 | Domain | `internal/domain/` | Entities, state machines, invariants |
 | Ports | `internal/port/` | Repository and service interfaces |
-| Use cases | `internal/usecase/` | Service contracts (no implementations) |
-| Adapters | `cmd/`, future `internal/adapter/` | Deferred — placeholder binaries only |
-| Contracts | `api/`, `proto/`, `migrations/` | OpenAPI, JSON Schema, protobuf, SQL |
+| Use cases | `internal/usecase/` | Northbound service contracts |
+| Modules | `internal/module/` | Application service implementations |
+| Adapters | `internal/adapter/` | Postgres, OPA, memory, builtin tools |
+| Entry | `cmd/agentosd`, `cmd/agentctl` | HTTP server and CLI |
 
 Dependency rule: outer layers depend on inner layers; domain has zero infrastructure imports.
 
 ## Architectural principles
 
-1. **Task-first orchestration** — all work flows through `taskd`
-2. **Tool syscall boundary** — agents never call MCP servers directly
+1. **Task-first orchestration** — work flows through TaskD
+2. **Tool syscall boundary** — agents invoke tools via ToolD, not directly
 3. **Memory and catalog separation** — governed memory vs operational graph
-4. **Security-by-substrate** — policy, ACL, and audit enforced outside the agent prompt
-5. **Safe discovery** — read-only collectors only; no network reconnaissance in v0.1
+4. **Security-by-substrate** — policy, ACL, and audit enforced outside the agent
+5. **Safe discovery** — read-only collectors only; no network reconnaissance in foundation
 
 ## Deferred components
 
-- `agentd` and Hermes runtime adapters
-- HTTP/gRPC server implementations
+- `agentd` and Hermes runtime adapters (v0.3)
+- Split daemon deployment (v0.4+)
 - Nix flakes and NixOS modules
 - Vault integration and Qdrant vector backend
+- Production OIDC (v0.2 uses dev auth stub)
 
-## Next vertical slices
-
-1. AuditD — append-only hash chain
-2. PolicyD — OPA REST wrapper
-3. TaskD — state machine + SSE
-4. ToolD — MCP gateway
-5. MemoryD — pgvector hybrid search
+See [ADR-0002](adr/0002-monolith-first-daemon.md) for monolith-first rationale.

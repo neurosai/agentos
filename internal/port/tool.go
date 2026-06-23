@@ -23,4 +23,5 @@ type ToolInvoker interface {
 type ToolInvocationRepository interface {
 	Create(ctx context.Context, rec tool.InvocationRecord) error
 	Get(ctx context.Context, callID string) (tool.InvocationRecord, error)
+	GetByIdempotency(ctx context.Context, toolID, key string) (tool.InvocationRecord, error)
 }

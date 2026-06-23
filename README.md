@@ -13,18 +13,18 @@
 
 **A policy-first control plane for running AI agents as governed infrastructure.**
 
-[![Go](https://img.shields.io/badge/Go-1.23-00ADD8?logo=go&logoColor=white)](https://go.dev/)
+[![Go](https://img.shields.io/badge/Go-1.25-00ADD8?logo=go&logoColor=white)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 [![OpenAPI](https://img.shields.io/badge/OpenAPI-3.1-6BA539?logo=openapiinitiative&logoColor=white)](api/openapi/)
 [![OPA](https://img.shields.io/badge/Policy-OPA-7D9199?logo=openpolicyagent&logoColor=white)](policies/)
-[![Status](https://img.shields.io/badge/status-v0.1%20foundation-orange)](#project-status)
+[![Status](https://img.shields.io/badge/status-v0.2%20operable%20core-orange)](#project-status)
 [![GitHub](https://img.shields.io/badge/GitHub-neurosai%2Fagentos-181717?logo=github)](https://github.com/neurosai/agentos)
 
 </div>
 
 AgentOS is not a new kernel. It is a Linux-based operating environment for AI agents: a system layer for tasks, policy, tools, memory, audit, discovery, and operational context. Linux supplies process isolation, networking, filesystems, cgroups, and namespaces; AgentOS supplies the control plane that makes autonomous work governable.
 
-This repository is the **v0.1 foundation**. It defines the domain model, service boundaries, API contracts, persistence model, and baseline policies. The service binaries are placeholders; AgentOS does not execute agents yet.
+This repository ships **v0.2 operable core**: a single-node `agentosd` control plane with TaskD, PolicyD, AuditD, ToolD (builtin mocks), and MemoryD backed by PostgreSQL and OPA. Agent execution (AgentD/Hermes) remains deferred.
 
 ## Why AgentOS?
 
@@ -107,58 +107,58 @@ Every privileged boundary is designed to be policy-checked and audit-correlated.
 ## Project status
 
 > [!IMPORTANT]
-> AgentOS is currently a **foundation/specification repository**, not a runnable agent platform.
+> AgentOS **v0.2 operable core** ships a single-node `agentosd` control plane. Agent execution (AgentD/Hermes) remains deferred.
 
-### Available now
+### Available now (v0.2)
 
-- Clean Architecture domain, port, and use-case layers
-- OpenAPI 3.1 contracts for seven services
-- protobuf contracts for task event streaming and catalog ingestion
-- JSON Schemas for agent manifests, catalog entities, and memory records
-- PostgreSQL migrations for tasks, audit, memory, catalog, discovery, and tools
-- pgvector-backed memory storage shape and HNSW index
-- OPA/Rego policy bundles with tests
-- example task, agent, memory, and catalog documents
-- infrastructure Compose profile for PostgreSQL, OPA, and OpenTelemetry Collector
-- placeholder CLI and daemon entry points
+- `agentosd serve` — monolithic control plane (TaskD, PolicyD, AuditD, ToolD, MemoryD)
+- `agentctl` — task, tool, memory, and audit CLI commands
+- PostgreSQL adapters with auto-migrate (or in-memory mode via `deploy/agentos-memory.yaml`)
+- OPA policy enforcement (or local stub when OPA URL is empty)
+- Builtin mock tools (`tool.echo`, `mock_jira_create`, …) with approval + idempotency
+- Hash-linked audit evidence chain
+- SSE task event stream
+
+See [docs/implementation-status.md](docs/implementation-status.md) for the component matrix.
 
 ### Not implemented yet
 
-- HTTP/gRPC servers and persistence adapters
-- task orchestration and agent execution
-- MCP proxying and credential exchange
-- embedding generation and memory retrieval
-- discovery collectors and catalog reconciliation
-- production authentication and authorization plumbing
-- AgentD, Hermes integration, Nix packaging, Vault, and Qdrant
+- AgentD and Hermes runtime integration
+- MCP real adapter and credential exchange
+- CatalogD and DiscoveryD APIs
+- Embedding generation, Qdrant hybrid search
+- Production OIDC (v0.2 uses dev bearer stub)
+- Nix packaging, Vault, split daemon deployment
 
 ## Quick start
 
 ### Prerequisites
 
-- Go 1.23+
+- Go 1.25+
 - Docker with Compose
 - [buf](https://buf.build/docs/installation)
 - [goose](https://github.com/pressly/goose)
 - [OPA](https://www.openpolicyagent.org/docs/latest/#running-opa)
 - [golangci-lint](https://golangci-lint.run/)
 
-### Build and test the foundation
+### Build and run
 
 ```bash
 git clone https://github.com/neurosai/agentos.git
 cd agentos
 
 make build
-go test ./internal/domain/... ./pkg/...
 ```
 
-Built placeholders are written to `bin/`:
+Primary binaries:
 
 ```bash
-./bin/agentctl
-./bin/taskd
+./bin/agentosd serve --config deploy/agentos.yaml
+./bin/agentctl version
+./bin/agentctl status
 ```
+
+Legacy per-service stubs (`taskd`, `policyd`, …) still build to `bin/` for forward compatibility but are not the v0.2 runtime.
 
 The repository also defines the intended full verification gate:
 
@@ -209,7 +209,7 @@ Example documents:
 ```text
 agentos/
 |-- api/                 OpenAPI and JSON Schema contracts
-|-- cmd/                 placeholder daemon and CLI entry points
+|-- cmd/                 agentosd, agentctl, and legacy daemon stubs
 |-- deploy/docker/       local infrastructure profile
 |-- examples/            example manifests and records
 |-- internal/

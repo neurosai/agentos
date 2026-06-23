@@ -1,0 +1,18 @@
+listen: ":8080"
+
+database:
+  url: ""
+  auto_migrate: false
+
+opa:
+  url: ""
+
+tools:
+  registry: "deploy/tools.yaml"
+
+dev:
+  tenant_id: "tenant:dev"
+  subject_id: "user:dev"
+  subject_roles:
+    - engineer
+  bearer_token: "dev-token"

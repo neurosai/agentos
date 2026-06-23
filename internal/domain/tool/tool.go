@@ -36,6 +36,7 @@ type Invoke struct {
 	Arguments      map[string]any
 	CredentialMode CredentialMode
 	Context        InvokeContext
+	IdempotencyKey string
 }
 
 // Result captures tool output and audit correlation.
@@ -51,12 +52,13 @@ type Result struct {
 
 // InvocationRecord is the persisted audit cross-reference.
 type InvocationRecord struct {
-	ID           string
-	ToolID       string
-	TaskID       string
-	AgentID      string
-	Status       string
-	AuditEventID string
-	StartedAt    time.Time
-	CompletedAt  *time.Time
+	ID             string
+	ToolID         string
+	TaskID         string
+	AgentID        string
+	Status         string
+	AuditEventID   string
+	IdempotencyKey string
+	StartedAt      time.Time
+	CompletedAt    *time.Time
 }

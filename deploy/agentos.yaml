@@ -1,0 +1,18 @@
+listen: ":8080"
+
+database:
+  url: "postgres://agentos:agentos@localhost:5432/agentos?sslmode=disable"
+  auto_migrate: true
+
+opa:
+  url: "http://localhost:8181"
+
+tools:
+  registry: "deploy/tools.yaml"
+
+dev:
+  tenant_id: "tenant:dev"
+  subject_id: "user:dev"
+  subject_roles:
+    - engineer
+  bearer_token: "dev-token"
