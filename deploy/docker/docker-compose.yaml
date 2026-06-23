@@ -7,19 +7,36 @@ services:
       POSTGRES_DB: agentos
     ports:
       - "5432:5432"
+    networks:
+      - agentos
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U agentos -d agentos"]
       interval: 5s
       timeout: 5s
       retries: 10
+    restart: unless-stopped
 
   opa:
     image: openpolicyagent/opa:latest
-    command: ["run", "--server", "/policies"]
+    # Load policy modules only — exclude *_test.rego (used by `opa test`, not the server).
+    command:
+      - run
+      - --server
+      - --addr=0.0.0.0:8181
+      - /policies/agentos/tasks.rego
+      - /policies/agentos/tools.rego
+      - /policies/agentos/memory.rego
+      - /policies/agentos/discovery.rego
     volumes:
       - ../../policies:/policies:ro
     ports:
       - "8181:8181"
+    networks:
+      - agentos
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
 
   otel-collector:
     image: otel/opentelemetry-collector:0.115.1
@@ -29,3 +46,11 @@ services:
     ports:
       - "4317:4317"
       - "4318:4318"
+    networks:
+      - agentos
+    restart: unless-stopped
+
+networks:
+  agentos:
+    driver: bridge
+    name: agentos
