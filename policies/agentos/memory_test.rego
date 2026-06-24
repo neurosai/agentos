@@ -28,3 +28,10 @@ test_allow_write if {
 		"action": "write",
 	}
 }
+
+test_allow_search_engineer if {
+	memory.allow with input as {
+		"action": "search",
+		"subject": {"roles": ["engineer"]},
+	}
+}

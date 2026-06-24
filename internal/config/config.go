@@ -34,10 +34,11 @@ type ToolsConfig struct {
 
 // DevConfig holds development auth defaults.
 type DevConfig struct {
-	TenantID     string   `yaml:"tenant_id"`
-	SubjectID    string   `yaml:"subject_id"`
-	SubjectRoles []string `yaml:"subject_roles"`
-	BearerToken  string   `yaml:"bearer_token"`
+	TenantID      string   `yaml:"tenant_id"`
+	SubjectID     string   `yaml:"subject_id"`
+	SubjectRoles  []string `yaml:"subject_roles"`
+	SubjectGroups []string `yaml:"subject_groups"`
+	BearerToken   string   `yaml:"bearer_token"`
 }
 
 // Load reads configuration from a YAML file.
@@ -61,6 +62,9 @@ func Load(path string) (Config, error) {
 	}
 	if len(cfg.Dev.SubjectRoles) == 0 {
 		cfg.Dev.SubjectRoles = []string{"engineer"}
+	}
+	if len(cfg.Dev.SubjectGroups) == 0 {
+		cfg.Dev.SubjectGroups = []string{"group:team-payments", "group:team-platform"}
 	}
 	if cfg.Dev.BearerToken == "" {
 		cfg.Dev.BearerToken = "dev-token"

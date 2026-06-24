@@ -186,6 +186,34 @@ export DATABASE_URL='postgres://agentos:agentos@localhost:5432/agentos?sslmode=d
 make migrate-up
 ```
 
+### v0.2 memory demo
+
+With `agentosd` running against Postgres and OPA (`deploy/agentos.yaml`):
+
+```bash
+./bin/agentctl memory put examples/memory/fact.json
+./bin/agentctl memory search payment
+```
+
+Or run the scripted flow (create task, tool echo, memory put/search):
+
+```bash
+./scripts/demo-v02.sh
+```
+
+### v0.3 task submit (mock agent)
+
+```bash
+./bin/agentctl task submit -f examples/tasks/repo-analysis.yaml \
+  --agent examples/agents/hermes-dev.yaml
+```
+
+This creates a task, starts the mock agent runtime (`POST /v1/tasks/{id}:run`), and waits until status is `COMPLETED`. Stream status with:
+
+```bash
+./bin/agentctl task events <task-id>
+```
+
 ## Contracts and examples
 
 ```text

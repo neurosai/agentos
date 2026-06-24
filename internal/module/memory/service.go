@@ -24,6 +24,7 @@ type Service struct {
 	tenant  string
 	subject string
 	roles   []string
+	groups  []string
 }
 
 type Options struct {
@@ -35,6 +36,7 @@ type Options struct {
 	Tenant  string
 	Subject string
 	Roles   []string
+	Groups  []string
 }
 
 func NewService(opt Options) *Service {
@@ -47,12 +49,17 @@ func NewService(opt Options) *Service {
 		tenant:  opt.Tenant,
 		subject: opt.Subject,
 		roles:   opt.Roles,
+		groups:  opt.Groups,
 	}
+}
+
+func (s *Service) policySubject() policy.Subject {
+	return policy.Subject{ID: s.subject, Roles: s.roles, Groups: s.groups}
 }
 
 func (s *Service) Create(ctx context.Context, rec memory.Record) (memory.Record, error) {
 	dec, err := s.policy.Evaluate(ctx, policy.EvaluationInput{
-		Subject:  policy.Subject{ID: s.subject, Roles: s.roles},
+		Subject:  s.policySubject(),
 		Resource: policy.Resource{Type: "memory", TenantID: s.tenant, Namespace: rec.Namespace},
 		Action:   "write",
 		Context:  policy.Context{Classification: rec.Classification},
@@ -105,10 +112,13 @@ func (s *Service) Get(ctx context.Context, id string) (memory.Record, error) {
 		return memory.Record{}, fmt.Errorf("memory record expired")
 	}
 	dec, err := s.policy.Evaluate(ctx, policy.EvaluationInput{
-		Subject:  policy.Subject{ID: s.subject, Roles: s.roles, Groups: rec.ACL.View},
-		Resource: policy.Resource{Type: "memory", ID: id, TenantID: s.tenant},
+		Subject:  s.policySubject(),
+		Resource: policy.Resource{Type: "memory", ID: id, TenantID: s.tenant, Namespace: rec.Namespace},
 		Action:   "read",
-		Context:  policy.Context{Classification: rec.Classification},
+		Record: policy.RecordContext{
+			Classification: rec.Classification,
+			Namespace:      rec.Namespace,
+		},
 	})
 	if err != nil {
 		return memory.Record{}, err
@@ -131,9 +141,9 @@ func (s *Service) Get(ctx context.Context, id string) (memory.Record, error) {
 
 func (s *Service) Search(ctx context.Context, q memory.Query) ([]memory.QueryResult, error) {
 	dec, err := s.policy.Evaluate(ctx, policy.EvaluationInput{
-		Subject:  policy.Subject{ID: s.subject, Roles: s.roles},
+		Subject:  s.policySubject(),
 		Resource: policy.Resource{Type: "memory", TenantID: s.tenant, Namespace: q.Namespace},
-		Action:   "read",
+		Action:   "search",
 	})
 	if err != nil {
 		return nil, err
@@ -164,7 +174,7 @@ func (s *Service) Search(ctx context.Context, q memory.Query) ([]memory.QueryRes
 		TenantID:  s.tenant,
 		SubjectID: s.subject,
 		EventType: "memory.read",
-		Action:    "memory.read",
+		Action:    "memory.search",
 		TraceID:   trace,
 		Payload:   map[string]any{"query": q.QueryText, "hits": len(filtered)},
 	})
@@ -177,7 +187,7 @@ func (s *Service) Delete(ctx context.Context, id string) error {
 		return err
 	}
 	dec, err := s.policy.Evaluate(ctx, policy.EvaluationInput{
-		Subject:  policy.Subject{ID: s.subject, Roles: s.roles},
+		Subject:  s.policySubject(),
 		Resource: policy.Resource{Type: "memory", ID: id, TenantID: s.tenant},
 		Action:   "delete",
 	})
@@ -209,17 +219,28 @@ func (s *Service) checkACL(rec memory.Record) error {
 		return nil
 	}
 	for _, v := range rec.ACL.View {
-		if v == s.subject || strings.HasPrefix(v, "role:") {
+		if v == s.subject {
 			return nil
 		}
 	}
 	for _, r := range s.roles {
-		candidate := "role:" + r
-		for _, v := range rec.ACL.View {
-			if v == candidate {
-				return nil
-			}
+		if contains(rec.ACL.View, "role:"+r) {
+			return nil
+		}
+	}
+	for _, g := range s.groups {
+		if contains(rec.ACL.View, g) || contains(rec.ACL.View, "group:"+strings.TrimPrefix(g, "group:")) {
+			return nil
 		}
 	}
 	return fmt.Errorf("acl denied")
+}
+
+func contains(slice []string, want string) bool {
+	for _, v := range slice {
+		if v == want {
+			return true
+		}
+	}
+	return false
 }

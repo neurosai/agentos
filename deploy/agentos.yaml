@@ -15,4 +15,7 @@ dev:
   subject_id: "user:dev"
   subject_roles:
     - engineer
+  subject_groups:
+    - group:team-payments
+    - group:team-platform
   bearer_token: "dev-token"

@@ -61,7 +61,7 @@ func runStatus(args []string) {
 
 func runTask(args []string) {
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "usage: agentctl task <create|get|events|approve>")
+		fmt.Fprintln(os.Stderr, "usage: agentctl task <create|get|events|approve|submit>")
 		os.Exit(1)
 	}
 	switch args[0] {
@@ -73,6 +73,8 @@ func runTask(args []string) {
 		taskEvents(args[1:])
 	case "approve":
 		taskApprove(args[1:])
+	case "submit":
+		taskSubmit(args[1:])
 	default:
 		os.Exit(1)
 	}
@@ -141,6 +143,78 @@ func taskEvents(args []string) {
 	for sc.Scan() {
 		fmt.Println(sc.Text())
 	}
+}
+
+func taskSubmit(args []string) {
+	fs := flag.NewFlagSet("submit", flag.ExitOnError)
+	file := fs.String("f", "", "task yaml file")
+	agentFile := fs.String("agent", "", "agent manifest yaml")
+	base := fs.String("base", defaultBase, "base URL")
+	wait := fs.Bool("wait", true, "poll until task completes")
+	_ = fs.Parse(args)
+	if *file == "" {
+		fmt.Fprintln(os.Stderr, "usage: agentctl task submit -f TASK.yaml --agent AGENT.yaml")
+		os.Exit(1)
+	}
+	data, err := os.ReadFile(*file)
+	if err != nil {
+		fatal(err)
+	}
+	var doc struct {
+		AgentRef  string            `yaml:"agentRef"`
+		ContextID string            `yaml:"contextId"`
+		Input     map[string]any    `yaml:"input"`
+		Labels    map[string]string `yaml:"labels"`
+	}
+	if err := yaml.Unmarshal(data, &doc); err != nil {
+		fatal(err)
+	}
+	body, _ := json.Marshal(map[string]any{
+		"agentRef":  doc.AgentRef,
+		"contextId": doc.ContextID,
+		"input":     doc.Input,
+		"labels":    doc.Labels,
+	})
+	created, err := doJSON("POST", *base+"/v1/tasks", body)
+	if err != nil {
+		fatal(err)
+	}
+	var taskResp struct {
+		ID string `json:"id"`
+	}
+	if err := json.Unmarshal(created, &taskResp); err != nil {
+		fatal(err)
+	}
+	runBody, _ := json.Marshal(map[string]any{
+		"agentRef":     doc.AgentRef,
+		"manifestPath": *agentFile,
+	})
+	if _, err := doJSON("POST", *base+"/v1/tasks/"+taskResp.ID+":run", runBody); err != nil {
+		fatal(err)
+	}
+	if !*wait {
+		printJSON(created)
+		return
+	}
+	for i := 0; i < 60; i++ {
+		got, err := doJSON("GET", *base+"/v1/tasks/"+taskResp.ID, nil)
+		if err != nil {
+			fatal(err)
+		}
+		var st struct {
+			Status string `json:"status"`
+		}
+		_ = json.Unmarshal(got, &st)
+		if st.Status == "COMPLETED" || st.Status == "FAILED" || st.Status == "CANCELLED" {
+			printJSON(got)
+			if st.Status != "COMPLETED" {
+				os.Exit(1)
+			}
+			return
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+	fatal(fmt.Errorf("timeout waiting for task %s", taskResp.ID))
 }
 
 func taskApprove(args []string) {
@@ -310,6 +384,7 @@ func printUsage() {
   agentctl task get <id>
   agentctl task events <id>
   agentctl task approve <id> [--approved]
+  agentctl task submit -f TASK.yaml --agent AGENT.yaml [--no-wait]
   agentctl audit trace <trace-id>
   agentctl tool invoke <toolId> --task ID [--arg message=...]
   agentctl memory put -f FILE

@@ -10,6 +10,12 @@ allow if {
 	input.action == "delete"
 }
 
+# Query/list gate — no specific record yet.
+allow if {
+	input.action == "search"
+	"engineer" in input.subject.roles
+}
+
 allow if {
 	input.action == "read"
 	input.record.classification == "internal"

@@ -55,6 +55,13 @@ type EvaluationInput struct {
 	Resource    Resource
 	Action      string
 	Context     Context
+	Record      RecordContext
+}
+
+// RecordContext carries memory/catalog record attributes for per-record policy checks.
+type RecordContext struct {
+	Classification string
+	Namespace      string
 }
 
 // Obligation is an action the enforcer must perform when allowing.

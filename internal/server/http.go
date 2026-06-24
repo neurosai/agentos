@@ -13,10 +13,12 @@ import (
 	"github.com/neurosai/agentos/internal/domain/memory"
 	"github.com/neurosai/agentos/internal/domain/task"
 	"github.com/neurosai/agentos/internal/domain/tool"
+	"github.com/neurosai/agentos/internal/domain/agent"
 	auditmod "github.com/neurosai/agentos/internal/module/audit"
 	memorymod "github.com/neurosai/agentos/internal/module/memory"
 	taskmod "github.com/neurosai/agentos/internal/module/task"
 	toolmod "github.com/neurosai/agentos/internal/module/tool"
+	"github.com/neurosai/agentos/internal/port"
 	"github.com/neurosai/agentos/internal/usecase"
 	"github.com/neurosai/agentos/pkg/version"
 	apperrors "github.com/neurosai/agentos/pkg/errors"
@@ -29,6 +31,7 @@ type App struct {
 	Audit   *auditmod.Service
 	Tools   *toolmod.Service
 	Memory  *memorymod.Service
+	Agent   port.AgentRuntime
 	Ready   func(context.Context) error
 }
 
@@ -93,6 +96,9 @@ func (a *App) routeTasks(w http.ResponseWriter, r *http.Request) {
 	case r.Method == http.MethodPost && strings.HasSuffix(rest, ":cancel"):
 		r.SetPathValue("id", strings.TrimSuffix(rest, ":cancel"))
 		a.handleCancelTask(w, r)
+	case r.Method == http.MethodPost && strings.HasSuffix(rest, ":run"):
+		r.SetPathValue("id", strings.TrimSuffix(rest, ":run"))
+		a.handleRunTask(w, r)
 	case r.Method == http.MethodGet:
 		r.SetPathValue("id", rest)
 		a.handleGetTask(w, r)
@@ -203,6 +209,45 @@ func (a *App) handleCancelTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, taskToJSON(t))
+}
+
+func (a *App) handleRunTask(w http.ResponseWriter, r *http.Request) {
+	if a.Agent == nil {
+		writeError(w, apperrors.New(apperrors.CodeBackendUnavailable, "agent runtime not configured"))
+		return
+	}
+	id := r.PathValue("id")
+	var req struct {
+		AgentRef     string `json:"agentRef"`
+		ManifestPath string `json:"manifestPath"`
+	}
+	if r.Body != nil {
+		_ = json.NewDecoder(r.Body).Decode(&req)
+	}
+	t, err := a.Tasks.Get(r.Context(), id)
+	if err != nil {
+		writeServiceError(w, err)
+		return
+	}
+	agentRef := req.AgentRef
+	if agentRef == "" {
+		agentRef = t.AgentRef
+	}
+	spec := agent.RunSpec{
+		TaskID:       id,
+		AgentRef:     agentRef,
+		ManifestPath: req.ManifestPath,
+	}
+	go func() {
+		ctx := context.Background()
+		if err := a.Agent.Run(ctx, spec); err != nil {
+			_, _ = fmt.Fprintf(io.Discard, "agent run %s: %v\n", id, err)
+		}
+	}()
+	writeJSON(w, http.StatusAccepted, map[string]any{
+		"id":     id,
+		"status": "RUNNING",
+	})
 }
 
 func (a *App) handleTaskEvents(w http.ResponseWriter, r *http.Request) {

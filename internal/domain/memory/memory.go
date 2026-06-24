@@ -51,12 +51,12 @@ type Record struct {
 
 // Query requests hybrid search over memory.
 type Query struct {
-	Namespace  string
-	QueryText  string
-	Types      []Type
-	Limit      int
-	MinScore   float64
-	SubjectRef string
+	Namespace  string  `json:"namespace,omitempty"`
+	QueryText  string  `json:"query,omitempty"`
+	Types      []Type  `json:"types,omitempty"`
+	Limit      int     `json:"limit,omitempty"`
+	MinScore   float64 `json:"minScore,omitempty"`
+	SubjectRef string  `json:"subjectRef,omitempty"`
 }
 
 // QueryResult is a ranked memory hit.

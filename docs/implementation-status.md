@@ -13,7 +13,7 @@ Factual matrix of AgentOS v0.2 components. Update when behavior changes; do not 
 | MemoryD | `api/openapi/memoryd.yaml` | `internal/domain/memory` | `internal/module/memory` | `internal/adapter/postgres/memoryrepo.go` | implemented |
 | CatalogD | `api/openapi/catalogd.yaml` | `internal/domain/catalog` | — | — | planned |
 | DiscoveryD | `api/openapi/discoveryd.yaml` | `internal/domain/discovery` | — | — | planned |
-| AgentD | — | — | — | — | planned (v0.3) |
+| AgentD | — | `internal/domain/agent` | `internal/module/agent` | — | implemented (mock runtime) |
 
 ## Legacy daemon stubs
 
@@ -23,6 +23,6 @@ Factual matrix of AgentOS v0.2 components. Update when behavior changes; do not 
 
 - OIDC authentication (dev stub bearer token in v0.2)
 - Embedding generation and Qdrant
-- Hermes / AgentD runtime
+- Hermes / container AgentD runtime (mock runtime in v0.3)
 - Nix packaging
 - Vault credential exchange

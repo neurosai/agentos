@@ -121,14 +121,14 @@ func packageToPath(pkg string) string {
 }
 
 func inputToMap(in policy.EvaluationInput) map[string]any {
-	return map[string]any{
+	m := map[string]any{
 		"requestId": in.RequestID,
 		"action":    in.Action,
 		"subject": map[string]any{
-			"type":     in.Subject.Type,
-			"id":       in.Subject.ID,
-			"roles":    in.Subject.Roles,
-			"groups":   in.Subject.Groups,
+			"type":      in.Subject.Type,
+			"id":        in.Subject.ID,
+			"roles":     in.Subject.Roles,
+			"groups":    in.Subject.Groups,
 			"group_ids": in.Subject.Groups,
 		},
 		"actingAgent": map[string]any{
@@ -150,6 +150,13 @@ func inputToMap(in policy.EvaluationInput) map[string]any {
 			"environment":    in.Context.Environment,
 		},
 	}
+	if in.Record.Classification != "" || in.Record.Namespace != "" {
+		m["record"] = map[string]any{
+			"classification": in.Record.Classification,
+			"namespace":      in.Record.Namespace,
+		}
+	}
+	return m
 }
 
 // PackageForAction maps action prefix to OPA package name.
@@ -157,7 +164,7 @@ func PackageForAction(action string) string {
 	switch action {
 	case "invoke":
 		return "agentos.tools"
-	case "read", "write", "delete":
+	case "read", "write", "delete", "search":
 		return "agentos.memory"
 	default:
 		if strings.HasPrefix(action, "task.") {

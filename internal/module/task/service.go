@@ -282,6 +282,18 @@ func (s *Service) ListArtifacts(ctx context.Context, taskID string) ([]task.Arti
 	return s.artifacts.List(ctx, taskID)
 }
 
+func (s *Service) AddArtifact(ctx context.Context, a task.Artifact) error {
+	if a.ID == "" {
+		id, err := s.ids.New(string(ids.PrefixEvent))
+		if err != nil {
+			return err
+		}
+		a.ID = id
+	}
+	a.CreatedAt = s.clock.Now().UTC()
+	return s.artifacts.Create(ctx, a)
+}
+
 func (s *Service) StreamEvents(ctx context.Context, taskID string, fromBeginning bool) (<-chan task.Message, error) {
 	if s.broadcast == nil {
 		ch := make(chan task.Message)

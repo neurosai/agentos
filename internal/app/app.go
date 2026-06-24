@@ -13,6 +13,7 @@ import (
 	"github.com/neurosai/agentos/internal/adapter/opa"
 	"github.com/neurosai/agentos/internal/adapter/postgres"
 	"github.com/neurosai/agentos/internal/config"
+	agentmod "github.com/neurosai/agentos/internal/module/agent"
 	auditmod "github.com/neurosai/agentos/internal/module/audit"
 	memorymod "github.com/neurosai/agentos/internal/module/memory"
 	policymod "github.com/neurosai/agentos/internal/module/policy"
@@ -118,6 +119,7 @@ func Build(ctx context.Context, cfg config.Config) (*server.App, func(), error) 
 		Tenant:  cfg.Dev.TenantID,
 		Subject: cfg.Dev.SubjectID,
 		Roles:   cfg.Dev.SubjectRoles,
+		Groups:  cfg.Dev.SubjectGroups,
 	})
 
 	ready := func(ctx context.Context) error {
@@ -143,12 +145,22 @@ func Build(ctx context.Context, cfg config.Config) (*server.App, func(), error) 
 		return nil
 	}
 
+	agentRuntime := agentmod.NewMockRuntime(agentmod.MockOptions{
+		Tasks:  taskSvc,
+		Tools:  toolSvc,
+		Memory: memSvc,
+		Audit:  auditSvc,
+		IDs:    ids,
+		Tenant: cfg.Dev.TenantID,
+	})
+
 	return &server.App{
 		Config: cfg,
 		Tasks:  taskSvc,
 		Audit:  auditSvc,
 		Tools:  toolSvc,
 		Memory: memSvc,
+		Agent:  agentRuntime,
 		Ready:  ready,
 	}, cleanup, nil
 }
